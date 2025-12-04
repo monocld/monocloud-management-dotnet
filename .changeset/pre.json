@@ -1,0 +1,8 @@
+{
+  "mode": "pre",
+  "tag": "beta",
+  "initialVersions": {
+    "@monocloud/monocloud-management-dotnet": "0.1.0"
+  },
+  "changesets": []
+}
