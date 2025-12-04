@@ -69,7 +69,10 @@ jobs:
 
       - name: Create and Push Git Tags
         if: steps.version_bumped.outputs.bumped == 'true'
-        run: pnpm changeset tag
+        run: |
+          set -e
+          pnpm changeset tag
+          git push --tags
 
   build:
     name: Build Projects
