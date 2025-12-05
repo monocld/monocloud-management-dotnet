@@ -22,7 +22,8 @@ jobs:
     if: github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'changeset-release/main'
     outputs:
       was_published: ${{ steps.version_bumped.outputs.bumped }}
-      version: ${{ steps.version_bumped.outputs.version }}
+      version: ${{ steps.semver.outputs.version }}
+      prerelease: ${{ steps.semver.outputs.prerelease }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -63,6 +64,13 @@ jobs:
           else
             echo "bumped=false" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Extract version
+        if: steps.version_bumped.outputs.bumped == 'true'
+        uses: apexskier/github-semver-parse@v1
+        id: semver
+        with:
+          version: ${{ steps.version_bumped.outputs.version }}
 
   pack:
     name: Pack Core SDK
@@ -139,3 +147,13 @@ jobs:
             --api-key "${{ secrets.NUGET_API_KEY }}" \
             --source "https://api.nuget.org/v3/index.json" \
             --skip-duplicate
+
+    - name: Create GitHub Release
+      if: github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'changeset-release/main' && needs.release.outputs.was_published == 'true'
+      uses: ncipollo/release-action@v1
+      with:
+        tag: v${{ needs.release.outputs.version }}
+        prerelease: ${{ needs.release.outputs.prerelease }}
+        name: v${{ needs.release.outputs.version }}
+        body: |
+          Test Body
