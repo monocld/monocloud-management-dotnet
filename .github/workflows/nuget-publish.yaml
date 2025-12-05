@@ -151,13 +151,24 @@ jobs:
             --source "https://api.nuget.org/v3/index.json" \
             --skip-duplicate
 
+    - name: Extract Changelog for Specific Version
+      id: extract_changelog
+      env:
+        TARGET_VERSION: ${{ needs.release.outputs.version }}
+        CHANGELOG_FILE: 'CHANGELOG.md'
+      run: |
+        LOG_CONTENT=$(sed -n "/^## $TARGET_VERSION\$/,/^## /{/^## $TARGET_VERSION\$/d; /^## /d; p;}" $CHANGELOG_FILE)
+        CLEAN_LOG_CONTENT=$(echo "$LOG_CONTENT" | sed 's/^[ \t]*//;s/[ \t]*$//' | sed '/^$/d')
+        echo "changelog_content<<EOF" >> $GITHUB_OUTPUT
+        echo "$CLEAN_LOG_CONTENT" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
     - name: Create GitHub Release
       if: github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'changeset-release/main' && needs.release.outputs.was_published == 'true'
       uses: ncipollo/release-action@v1
       with:
         tag: v${{ needs.release.outputs.version }}
-        prerelease: ${{ needs.release.outputs.prerelease }}
+        prerelease: ${{ !!needs.release.outputs.prerelease }}
         name: v${{ needs.release.outputs.version }}
         artifacts: ${{ env.NuGetDirectory }}/*.nupkg
-        body: |
-          Test Body
+        body: ${{ steps.extract_changelog.outputs.changelog_content }}
