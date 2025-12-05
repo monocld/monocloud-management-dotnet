@@ -155,5 +155,6 @@ jobs:
         tag: v${{ needs.release.outputs.version }}
         prerelease: ${{ needs.release.outputs.prerelease }}
         name: v${{ needs.release.outputs.version }}
+        artifacts: ${{ env.NuGetDirectory }}/*.nupkg
         body: |
           Test Body
